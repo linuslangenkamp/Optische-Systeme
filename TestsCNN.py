@@ -14,7 +14,7 @@ import Util
 import ursina
 
 print("Packages imported...")
- #%% import model
+#%% import model
 
 model = keras.models.load_model('CNN_NoBG.h5')
 #%% define constants
