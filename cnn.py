@@ -1,24 +1,15 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Jan  3 15:05:40 2024
-
-@author: Linus
+Last Edit 18.01.2024
+@author: Linus Langenkamp
 """
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-# import image processing libraries
 import cv2
 import skimage
 from skimage.transform import resize
-
-# import tensorflow and keras
-import tensorflow as tf
-from tensorflow import keras
-import os
 
 print("Packages imported...")
 #%%
@@ -27,9 +18,8 @@ imageSize = 64
 target_dims = (imageSize, imageSize, 3)
 num_classes = 29
 
-train_len = 87000
-train_dir = 'archive/asl_alphabet_train/asl_alphabet_train/'
-
+train_len = 901 * num_classes
+train_dir = 'archive/asl_alphabet_train_noBG/asl_alphabet_train/'
 
 def get_data(folder):
     X = np.empty((train_len, imageSize, imageSize, 3), dtype=np.float32)
@@ -234,5 +224,6 @@ sns.heatmap(confusion_matrix(y_test,predictions))
 plt.show()
 #%%
 
-model.save('asl_cnn.h5')
+model.save('asl_cnn_noBG.h5')
 print("Model saved successfully...")
+
