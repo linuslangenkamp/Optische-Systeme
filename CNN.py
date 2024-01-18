@@ -224,6 +224,6 @@ sns.heatmap(confusion_matrix(y_test,predictions))
 plt.show()
 #%%
 
-model.save('asl_cnn_noBG.h5')
+model.save('CNN_NoBG.h5')
 print("Model saved successfully...")
 

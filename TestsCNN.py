@@ -16,7 +16,7 @@ import ursina
 print("Packages imported...")
 #%% import model
 
-model = keras.models.load_model('asl_cnn_noBG.h5')
+model = keras.models.load_model('CNN_NoBG.h5')
 #%% define constants
 
 batch_size = 64
