@@ -8,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import cv2
+import os
 import skimage
 from skimage.transform import resize
 
@@ -18,8 +19,9 @@ imageSize = 64
 target_dims = (imageSize, imageSize, 3)
 num_classes = 29
 
-train_len = 901 * num_classes
+train_len = 2 * 901 * num_classes
 train_dir = 'archive/asl_alphabet_train_noBG/asl_alphabet_train/'
+
 
 def get_data(folder):
     X = np.empty((train_len, imageSize, imageSize, 3), dtype=np.float32)
@@ -226,4 +228,3 @@ plt.show()
 
 model.save('CNN_NoBG.h5')
 print("Model saved successfully...")
-

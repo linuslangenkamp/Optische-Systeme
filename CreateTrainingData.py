@@ -37,6 +37,7 @@ with VmbSystem.get_instance() as vmb:
                 frameBG = np.mean(bglist, axis=0)
             # extraction, adding to tempList
             else:
+                print(it)
                 extracted = Util.extractBG(frame, frameBG, kernelSmall, kernelBig)
                 extracted = cv2.resize(extracted, (200, 200))
                 if 1201 > it > 200:
@@ -52,7 +53,7 @@ print("Took {} seconds to record".format(time.time() - timeStart))
 #%% export training data
 tempPath = r'C:\Users\Linus\Desktop\Studium\Master\Optische Systeme\Projekt\archive\asl_alphabet_train_noBG\temp'
 letter = "Z"
-letterNumber = 0
+letterNumber = 901
 for image in tempList:
     cv2.imwrite(tempPath + "\\" + letter + str(letterNumber) + ".jpg", image)
     letterNumber += 1

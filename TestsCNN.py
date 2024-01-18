@@ -14,7 +14,7 @@ import Util
 import ursina
 
 print("Packages imported...")
-#%% import model
+ #%% import model
 
 model = keras.models.load_model('CNN_NoBG.h5')
 #%% define constants
@@ -56,7 +56,8 @@ with VmbSystem.get_instance() as vmb:
                     imgResized = skimage.transform.resize(extracted, (imageSize, imageSize, 3))
                     img = np.asarray(imgResized).reshape((-1, imageSize, imageSize, 3))
                     evaluation = model(img)
-                    print(Util.inverse(np.argmax(evaluation)))
+                    argmax = np.argmax(evaluation)
+                    print("%s, %s" % (Util.inverse(argmax), evaluation[0, argmax].numpy()))
                 cv2.imshow('frame', extracted)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break

@@ -17,8 +17,7 @@ class Handler:
 
     def __call__(self, cam: Camera, stream: Stream, frame: Frame):
         if frame.get_status() == FrameStatus.Complete:
-            print('{} acquired {}'.format(cam, frame), flush=True)
-
+            # print('{} acquired {}'.format(cam, frame), flush=True)
             self.display_queue.put(frame.as_opencv_image(), True)
 
         cam.queue_frame(frame)
