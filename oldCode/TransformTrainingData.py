@@ -32,7 +32,7 @@ target_dims = (imageSize, imageSize, 3)
 num_classes = 29
 
 train_len = 87000
-train_dir = 'archive/asl_alphabet_train/asl_alphabet_train/'
+train_dir = '../archive/asl_alphabet_train/asl_alphabet_train/'
 
 
 def get_data(folder):
