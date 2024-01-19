@@ -52,8 +52,8 @@ print("Took {} seconds to record".format(time.time() - timeStart))
 
 #%% export training data
 tempPath = r'C:\Users\Linus\Desktop\Studium\Master\Optische Systeme\Projekt\archive\asl_alphabet_train_noBG\temp'
-letter = "Z"
-letterNumber = 901
+letter = "T"
+letterNumber = 1802
 for image in tempList:
     cv2.imwrite(tempPath + "\\" + letter + str(letterNumber) + ".jpg", image)
     letterNumber += 1

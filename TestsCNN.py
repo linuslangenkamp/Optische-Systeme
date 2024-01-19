@@ -11,12 +11,11 @@ import skimage
 from skimage.transform import resize
 from tensorflow import keras
 import Util
-import ursina
 
 print("Packages imported...")
 #%% import model
 
-model = keras.models.load_model('CNN_NoBG.h5')
+model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
 #%% define constants
 
 batch_size = 64

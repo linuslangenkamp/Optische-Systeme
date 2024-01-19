@@ -12,7 +12,7 @@ from tensorflow import keras
 print("Packages imported...")
 #%% import model
 
-model = keras.models.load_model('CNN_NoBG.h5')
+model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
 #%% define constants
 
 batch_size = 64
@@ -21,7 +21,7 @@ target_dims = (imageSize, imageSize, 3)
 num_classes = 29
 #%%
 
-layer_index = 5
+layer_index = 1
 output_layer = model.layers[layer_index].output
 new_model = keras.models.Model(inputs=model.input, outputs=output_layer)
 #%%

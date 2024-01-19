@@ -19,7 +19,7 @@ imageSize = 64
 target_dims = (imageSize, imageSize, 3)
 num_classes = 29
 
-train_len = 2 * 901 * num_classes
+train_len = 2 * 901 * num_classes + 2 * 901
 train_dir = 'archive/asl_alphabet_train_noBG/asl_alphabet_train/'
 
 
@@ -226,5 +226,5 @@ sns.heatmap(confusion_matrix(y_test,predictions))
 plt.show()
 #%%
 
-model.save('CNN_NoBG.h5')
+model.save('models\CNN_NoBG_ext_TO.h5')
 print("Model saved successfully...")
