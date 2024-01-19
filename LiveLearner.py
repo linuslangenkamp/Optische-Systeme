@@ -2,11 +2,13 @@ from ursina import *
 import Util
 import numpy as np
 from PIL import Image
-from matplotlib import cm
 
-
-app = Ursina(title="sign language learning", borderless=False, icon="icon.ico")
-#window.color = color.rgb(255, 255, 255)
+window.title = "LiveLearner"
+window.icon = r"archive\images\icon.ico"
+window.borderless = False
+app = Ursina()
+window.color = color.rgb(55, 55, 55)
+window.size = window.fullscreen_size
 
 
 def buchstaben():
@@ -50,8 +52,6 @@ image_texture = load_texture(r'archive\alphabet_pictogram\A.jpg')
 Text(parent=livePreview, text='Live Preview:', color=color.black, scale=(15, 15), position=(-2, -2))
 pictogram = Entity(model='quad', texture=image_texture, scale=(6, 3, 3), position=(0, -2))
 i = 0
-test, test2 = None, None
-
 
 bigImage = np.load('bigImage.npy')
 bigImageExpanded = np.expand_dims(bigImage, axis=2)
@@ -61,7 +61,6 @@ print(bigImage.shape, saturationValues.shape)
 
 
 def update():
-    global test, test2
     rgbS = np.concatenate((bigImage, saturationValues), axis=2)
     pictogram.texture = Texture(Image.fromarray(rgbS))
 
