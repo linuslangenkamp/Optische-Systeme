@@ -16,6 +16,8 @@ import copy
 model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
 #%% define constants
 
+Text.default_font = 'fonts/Ubuntu-Regular.ttf'
+Text.default_resolution = 200
 batch_size = 64
 imageSize = 64
 target_dims = (imageSize, imageSize, 3)
@@ -56,6 +58,19 @@ def beenden():
     app.userExit()
 
 
+def sliderChange():
+    global correctsInARow, holdingFrames
+    correctsInARow = 0
+    holdingFrames = max(1, int(holdDuration.value * 32))
+
+
+def update_health_bar(value):
+    value = clamp(value, 0, 1)
+    holdBar.scale_x = 2 * value
+    holdBar.x = -2 + value
+    holdBar.color = lerp(color.red, color.green, value)
+
+
 mainMenu = Entity()
 mainMenu.position = (0, 0)
 headline = Text(parent=mainMenu, scale=(25, 25), position=(0, 2), text="Deutsches Fingeralphabet - LiveLearner")
@@ -67,16 +82,22 @@ Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Beenden', on_cli
 
 woerterMenu = Entity()
 woerterMenu.position = (0, 0)
-Button(parent=woerterMenu, color=color.gray, scale=(3, 1), text='Back', on_click=backToMain, position=(0, -3), radius=.2)
-t1 = Text(parent=woerterMenu, text='Wort: ', color=color.black, scale=(15, 15), position=(0, 2.5))
-t1.setPos((-t1.width/2, 2.5, 0))
-t2 = Text(parent=woerterMenu, text='Erkannt: ', color=color.black, scale=(15, 15), position=(0, 1.5))
-t2.setPos((-t2.width/2, 1.5, 0))
-pictogram = Entity(model='quad', scale=(3, 3, 3), position=(0, -2), parent=woerterMenu)
-liveExtracted = Entity(model='quad', scale=(3, 3, 3), position=(0, -2), parent=woerterMenu)
-pictLetter = Entity(model='quad', scale=(3, 3, 3), position=(0, -2), parent=woerterMenu)
-liveLetter = Entity(model='quad', scale=(3, 3, 3), position=(0, -2), parent=woerterMenu)
+Button(parent=woerterMenu, color=color.gray, scale=(3, 1), text='Back', on_click=backToMain, position=(-5, -3), radius=.2)
+t1 = Text(parent=woerterMenu, text='', color=color.white, scale=(15, 15), position=(-5.53, 3.5))
+t2 = Text(parent=woerterMenu, text='', color=color.white, scale=(15, 15), position=(-6, 2.5))
+pictogram = Entity(model='quad', scale=(2, 2, 2), position=(-1, 2), parent=woerterMenu)
+liveExtracted = Entity(model='quad', scale=(2, 2, 2), position=(-1, -1), parent=woerterMenu)
+pictLetterBase = Entity(model='quad', scale=(2, 2, 2), position=(4, 2), parent=woerterMenu, color=color.white)
+pictLetter = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=pictLetterBase,  text="", color=color.black)
+liveLetterBase = Entity(model='quad', scale=(2, 2, 2), position=(4, -1), parent=woerterMenu, color=color.white)
+liveLetter = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=liveLetterBase,  text="", color=color.black)
+arrow = Entity(model='quad', scale=(3.74/2, 1.04/2), position=(1.5, -1.25), parent=woerterMenu, texture=load_texture("archive/images/pfeil.png"))
+evalText = Text(scale=(20, 20), origin=(0, 0), position=(1.5, -0.75, -1e-3), parent=woerterMenu,  text="", color=color.white)
+holdText = Text(scale=(15, 15), origin=(0, 0), position=(-5.05, -1), parent=woerterMenu, text="Haltezeit in sek.", color=color.white)
+holdDuration = Slider(parent=woerterMenu, position=(-6.3, -1.5), min=0, max=3, default=1, scale=(5, 5), on_value_changed=sliderChange)
+holdBar = Entity(model='quad', scale=(1, 0.1), color=color.red, position=(0, 0), parent=woerterMenu)
 woerterMenu.disable()
+
 
 freeMenu = Entity()
 freeMenu.position = (-1, 2)
@@ -117,10 +138,13 @@ with VmbSystem.get_instance() as vmb:
         handler = Util.Handler()
         cam.start_streaming(handler=handler, buffer_count=10)
 
-        it, frameBG = 0, None
+        it, letterIdx, frameBG = 0, 0, None
+        sliderChange()
+
+        currentWord, currentLetter = None, None
 
         def update():
-            global it, frameBG
+            global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow
             frame = handler.get_image()
             # reference background
             if it < 24:
@@ -136,10 +160,36 @@ with VmbSystem.get_instance() as vmb:
                     img = np.asarray(imgResized).reshape((-1, imageSize, imageSize, 3))
                     evaluation = model(img)
                     argmax = np.argmax(evaluation)
-                    bestLetter = Util.inverse(argmax)
+
+                    bestLetter = Util.shortLetter(Util.inverse(argmax))
                     bestEval = evaluation[0, argmax].numpy()
                     print("%s, %s" % (bestLetter, bestEval))
-                    pictogram.texture = Texture(Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    if bestEval < 0.8:
+                        bestLetter = "?"
+                    elif bestEval < 0.99:
+                        bestLetter += "?"
+
+                    if woerterMenu.enabled:
+                        if currentWord is None or letterIdx == len(currentWord):
+                            currentWord = Util.generateWord()
+                            letterIdx = 0
+                            t1.text = 'Wort: ' + currentWord
+                            t2.text = 'Erkannt: '
+                        currentLetter = currentWord[letterIdx]
+                        if bestLetter == currentLetter:
+                            correctsInARow += 1
+                        else:
+                            correctsInARow = 0
+                        update_health_bar(correctsInARow / holdingFrames)
+                        if correctsInARow == holdingFrames:
+                            t2.text += bestLetter
+                            letterIdx += 1
+                            correctsInARow = 0
+                        liveExtracted.texture = Texture(Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                        pictogram.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
+                        liveLetter.text = bestLetter
+                        pictLetter.text = Util.shortLetter(currentLetter)
+                        evalText.text = f"{bestEval:.03}"
             it += 1
 
         app.run()

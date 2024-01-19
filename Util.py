@@ -53,6 +53,17 @@ def inverse(index):
     return label
 
 
+def shortLetter(letter):
+    if letter == 'del':
+        return "--"
+    elif letter == 'space':
+        return "_"
+    elif letter == 'nothing':
+        return ""
+    else:
+        return letter
+
+
 def allEvaluations(tensor):
     for index in range(26):
         print("%s: %s" % (chr(ord("A") + index), tensor[0,index].numpy()))
@@ -72,9 +83,9 @@ def best(tensor):
 
 def generateWord():
     w = "NULLNULL"
-    while len(w) > 7 and "ö" not in w and "ä" not in w and "ü" not in w:
-        w = fake.word()
-    return w.upper()
+    while len(w) > 7 or "Ö" in w or "Ä" in w or "Ü" in w:
+        w = fake.word().upper()
+    return w
 
 
 def generateLetter():
