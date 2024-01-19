@@ -59,7 +59,7 @@ def shortLetter(letter):
     elif letter == 'space':
         return "_"
     elif letter == 'nothing':
-        return ""
+        return "~"
     else:
         return letter
 
