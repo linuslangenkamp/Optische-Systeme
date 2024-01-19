@@ -62,9 +62,7 @@ print(bigImage.shape, saturationValues.shape)
 
 def update():
     global test, test2
-    new_array = np.concatenate((bigImage, saturationValues), axis=2)
-    im = Image.fromarray(new_array)
-    # set pil image to texture
-    pictogram.texture = Texture(im)
+    rgbS = np.concatenate((bigImage, saturationValues), axis=2)
+    pictogram.texture = Texture(Image.fromarray(rgbS))
 
 app.run()
