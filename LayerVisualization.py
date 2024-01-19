@@ -44,7 +44,6 @@ bigImage = np.zeros((800, 1600), dtype="uint8")
 for x in range(8):
     for y in range(4):
         bigImage[y * 200: ((y+1) * 200), x * 200: (x+1) * 200] = allImages[x + 8 * y]
-
 #%%
 
 while True:
