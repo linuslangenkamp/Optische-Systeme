@@ -68,6 +68,7 @@ def updateHoldBar(bar, value):
     bar.x = -2 + value
     bar.color = lerp(color.red, color.green, value)
 
+
 mainMenu = Entity()
 mainMenu.position = (0, 0)
 headline = Text(parent=mainMenu, scale=(25, 25), position=(0, 2), text="Deutsches Fingeralphabet - LiveLearner")
@@ -98,9 +99,15 @@ woerterMenu.disable()
 
 freeMenu = Entity()
 freeMenu.position = (0, 0)
-Button(parent=freeMenu, model='quad', color=color.gray, scale=(3, 0.6), text='Zurück', on_click=backToMain, position=(-3, 2))
-Text(parent=freeMenu, text='Wort: ', color=color.black, scale=(15, 15), position=(-2, 1))
-Text(parent=freeMenu, text='Erkannt: ', color=color.black, scale=(15, 15), position=(-2, 0))
+Button(parent=freeMenu, color=color.gray, scale=(3, 1), text='Zurück', on_click=backToMain, position=(-5, -3), radius=.2)
+liveExtractedF = Entity(model='quad', scale=(2, 2, 2), position=(-3, 1), parent=freeMenu)
+liveF = Entity(model='quad', scale=(2, 2, 2), position=(-6, 2.5), parent=freeMenu)
+bgF = Entity(model='quad', scale=(2, 2, 2), position=(-6, -0.5), parent=freeMenu)
+nnBorder = Entity(model='quad', color=color.white, scale=(5, 5), position=(1.5, 1), collider='box', parent=freeMenu)
+nnBorder.roundness = 0.1
+nnBackground = Entity(model='quad', color=color.rgb(55, 55, 55), scale=(4.9, 4.9), position=(1.5, 1, -1e-3), collider='box', parent=freeMenu)
+liveLetterBaseF = Entity(model='quad', scale=(2, 2, 2), position=(6, 1), parent=freeMenu, color=color.white)
+liveLetterF = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=liveLetterBaseF,  text="", color=color.black)
 freeMenu.disable()
 
 buchstabenMenu = Entity()
@@ -137,9 +144,8 @@ with VmbSystem.get_instance() as vmb:
         cam.start_streaming(handler=handler, buffer_count=10)
 
         it, letterIdx, frameBG = 0, 0, None
-        sliderChange()
-
         currentWord, currentLetter = None, None
+        sliderChange()
 
         def update():
             global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow
@@ -149,63 +155,74 @@ with VmbSystem.get_instance() as vmb:
                 bglist.append(frame)
             elif it == 24:
                 frameBG = np.mean(bglist, axis=0)
-            # extraction, resizing, evaluation, best match
             else:
+                # extraction, resizing, evaluation, best match
                 extracted = Util.extractBG(frame, frameBG, kernelSmall, kernelBig)
                 extracted = cv2.resize(extracted, (200, 200))
-                if it >= 25:
-                    imgResized = skimage.transform.resize(extracted, (imageSize, imageSize, 3))
-                    img = np.asarray(imgResized).reshape((-1, imageSize, imageSize, 3))
-                    evaluation = model(img)
-                    argmax = np.argmax(evaluation)
+                imgResized = skimage.transform.resize(extracted, (imageSize, imageSize, 3))
+                img = np.asarray(imgResized).reshape((-1, imageSize, imageSize, 3))
+                evaluation = model(img)
+                argmax = np.argmax(evaluation)
 
-                    bestLetter = Util.shortLetter(Util.inverse(argmax))
-                    bestEval = evaluation[0, argmax].numpy()
-                    print("%s, %s" % (bestLetter, bestEval))
-                    if bestEval < 0.8:
-                        bestLetter = "?"
-                    elif bestEval < 0.99:
-                        bestLetter += "?"
+                bestLetter = Util.shortLetter(Util.inverse(argmax))
+                bestEval = evaluation[0, argmax].numpy()
 
-                    if woerterMenu.enabled:
-                        if currentWord is None or letterIdx == len(currentWord):
-                            currentWord = Util.generateWord()
-                            letterIdx = 0
-                            t1.text = 'Wort: ' + currentWord
-                            t2.text = 'Erkannt: '
-                        currentLetter = currentWord[letterIdx]
-                        if bestLetter == currentLetter:
-                            correctsInARow += 1
-                        else:
-                            correctsInARow = 0
-                        updateHoldBar(holdBar, correctsInARow / holdingFrames)
-                        if correctsInARow == holdingFrames:
-                            t2.text += bestLetter
-                            letterIdx += 1
-                            correctsInARow = 0
-                        liveExtracted.texture = Texture(Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
-                        pictogram.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
-                        liveLetter.text = bestLetter
-                        pictLetter.text = Util.shortLetter(currentLetter)
-                        evalText.text = f"{bestEval:.03}"
+                # ? if uncertain
+                if bestEval < 0.8:
+                    bestLetter = "?"
+                elif bestEval < 0.99:
+                    bestLetter += "?"
 
-                    elif buchstabenMenu.enabled:
-                        if currentLetter is None:
-                            currentLetter = Util.generateLetter()
-                        if bestLetter == currentLetter:
-                            correctsInARow += 1
-                        else:
-                            correctsInARow = 0
-                        updateHoldBar(holdBarB, correctsInARow / holdingFrames)
-                        if correctsInARow == holdingFrames:
-                            correctsInARow = 0
-                            currentLetter = Util.generateLetter()
-                        liveExtractedB.texture = Texture(
-                            Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
-                        pictogramB.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
-                        liveLetterB.text = bestLetter
-                        pictLetterB.text = Util.shortLetter(currentLetter)
-                        evalTextB.text = f"{bestEval:.03}"
+                # ui cases
+                if woerterMenu.enabled:
+                    if currentWord is None or letterIdx == len(currentWord):
+                        currentWord = Util.generateWord()
+                        letterIdx = 0
+                        t1.text = 'Wort: ' + currentWord
+                        t2.text = 'Erkannt: '
+                    currentLetter = currentWord[letterIdx]
+                    if bestLetter == currentLetter:
+                        correctsInARow += 1
+                    else:
+                        correctsInARow = 0
+                    updateHoldBar(holdBar, correctsInARow / holdingFrames)
+                    if correctsInARow == holdingFrames:
+                        t2.text += bestLetter
+                        letterIdx += 1
+                        correctsInARow = 0
+                    liveExtracted.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    pictogram.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
+                    liveLetter.text = bestLetter
+                    pictLetter.text = Util.shortLetter(currentLetter)
+                    evalText.text = f"{bestEval:.03}"
+
+                elif buchstabenMenu.enabled:
+                    if currentLetter is None:
+                        currentLetter = Util.generateLetter()
+                    if bestLetter == currentLetter:
+                        correctsInARow += 1
+                    else:
+                        correctsInARow = 0
+                    updateHoldBar(holdBarB, correctsInARow / holdingFrames)
+                    if correctsInARow == holdingFrames:
+                        correctsInARow = 0
+                        currentLetter = Util.generateLetter()
+                    liveExtractedB.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    pictogramB.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
+                    liveLetterB.text = bestLetter
+                    pictLetterB.text = Util.shortLetter(currentLetter)
+                    evalTextB.text = f"{bestEval:.03}"
+
+                elif freeMenu.enabled:
+                    liveExtractedF.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    liveF.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    bgF.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(frameBG.astype('uint8'), cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                    liveLetterF.text = bestLetter
             it += 1
 
         app.run()
