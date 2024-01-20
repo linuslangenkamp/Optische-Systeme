@@ -21,7 +21,8 @@ class Handler:
             if not self.display_queue.full():
                 self.display_queue.put(copy.deepcopy(frame.as_opencv_image()), False)
             else:
-                print("Dropping frame!")
+                pass
+                # print("Dropping frame!")
 
         cam.queue_frame(frame)
 

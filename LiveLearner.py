@@ -14,9 +14,9 @@ import time
 
 model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
 
-modelC1 = keras.models.Model(inputs=model.input, outputs=model.layers[1].output)
-modelC2 = keras.models.Model(inputs=model.input, outputs=model.layers[3].output)
-modelC3 = keras.models.Model(inputs=model.input, outputs=model.layers[5].output)
+modelC1 = keras.models.Model(inputs=model.input, outputs=model.layers[2].output)
+modelC2 = keras.models.Model(inputs=model.input, outputs=model.layers[4].output)
+modelC3 = keras.models.Model(inputs=model.input, outputs=model.layers[6].output)
 #%% define constants
 
 Text.default_font = 'fonts/Ubuntu-Regular.ttf'
@@ -229,17 +229,30 @@ with VmbSystem.get_instance() as vmb:
                     liveF.texture = Texture(
                         Image.fromarray(cv2.cvtColor(cv2.resize(frame, (200, 200)), cv2.COLOR_BGR2RGBA), mode="RGBA"))
                     liveLetterF.text = bestLetter
+
+                    cImages = []
                     c1 = modelC1(img).numpy()
-                    c1Images = []
-                    for idx in range(9):
+                    for idx in range(12):
                         layer1Output = (255 * c1[0, :, :, idx] / np.max(c1[0, :, :, :]))
-                        c1Images.append(cv2.resize(layer1Output, (75, 75), interpolation=cv2.INTER_NEAREST))
-                    bigImage = np.zeros((75*3, 75*3), dtype="uint8")
-                    for x in range(3):
-                        for y in range(3):
-                            bigImage[x * 75: (x + 1) * 75, y * 75: ((y + 1) * 75)] = c1Images[2 * x + y]
+                        cImages.append(cv2.resize(layer1Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+
+                    c2 = modelC2(img).numpy()
+                    for idx in range(12):
+                        layer2Output = (255 * c2[0, :, :, idx] / np.max(c2[0, :, :, :]))
+                        cImages.append(cv2.resize(layer2Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+
+                    c3 = modelC3(img).numpy()
+                    for idx in range(12):
+                        layer3Output = (255 * c3[0, :, :, idx] / np.max(c3[0, :, :, :]))
+                        cImages.append(cv2.resize(layer3Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+
+                    bigImage = np.zeros((600, 600), dtype="uint8")
+                    for x in range(6):
+                        for y in range(6):
+                            bigImage[x * 100: (x + 1) * 100, y * 100: ((y + 1) * 100)] = cImages[x + 6 * y]
                     nnBackground.texture = Texture(
                         Image.fromarray(cv2.cvtColor(bigImage, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+
             it += 1
 
         app.run()
