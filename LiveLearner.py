@@ -1,5 +1,3 @@
-import copy
-
 from ursina import *
 import Util
 import numpy as np
@@ -9,7 +7,6 @@ from vmbpy import *
 import cv2
 import skimage
 from skimage.transform import resize
-import copy
 
 #%% import model
 
@@ -50,6 +47,7 @@ def free():
 def backToMain():
     woerterMenu.disable()
     buchstabenMenu.disable()
+    freeMenu.disable()
     mainMenu.enable()
 
 
@@ -64,12 +62,11 @@ def sliderChange():
     holdingFrames = max(1, int(holdDuration.value * 32))
 
 
-def update_health_bar(value):
+def updateHoldBar(bar, value):
     value = clamp(value, 0, 1)
-    holdBar.scale_x = 2 * value
-    holdBar.x = -2 + value
-    holdBar.color = lerp(color.red, color.green, value)
-
+    bar.scale_x = 2 * value
+    bar.x = -2 + value
+    bar.color = lerp(color.red, color.green, value)
 
 mainMenu = Entity()
 mainMenu.position = (0, 0)
@@ -77,7 +74,7 @@ headline = Text(parent=mainMenu, scale=(25, 25), position=(0, 2), text="Deutsche
 Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Buchstaben', on_click=buchstaben, position=(-4, 0), radius=.2)
 headline.setPos((-headline.width/2, 2, 0))
 Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Wörter', on_click=woerter, position=(0, 0), radius=.2)
-Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Freier Modus', on_click=woerter, position=(4, 0), radius=.2)
+Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Freier Modus', on_click=free, position=(4, 0), radius=.2)
 Button(parent=mainMenu, color=color.gray, scale=(3.5, 1), text='Beenden', on_click=beenden, position=(0, -2), radius=.2)
 
 woerterMenu = Entity()
@@ -100,29 +97,30 @@ woerterMenu.disable()
 
 
 freeMenu = Entity()
-freeMenu.position = (-1, 2)
+freeMenu.position = (0, 0)
 Button(parent=freeMenu, model='quad', color=color.gray, scale=(3, 0.6), text='Zurück', on_click=backToMain, position=(-3, 2))
-Text(parent=freeMenu, text='Zeige folgenden Buchstaben: B', color=color.black, scale=(15, 15), position=(-2, 1))
-Text(parent=freeMenu, text='Erkannte Buchstaben:  B  C  D  F ...', color=color.black, scale=(15, 15), position=(-2, 0))
+Text(parent=freeMenu, text='Wort: ', color=color.black, scale=(15, 15), position=(-2, 1))
+Text(parent=freeMenu, text='Erkannt: ', color=color.black, scale=(15, 15), position=(-2, 0))
 freeMenu.disable()
 
 buchstabenMenu = Entity()
-buchstabenMenu.position = (-1, 2)
-Button(parent=buchstabenMenu, model='quad', color=color.gray, scale=(3, 0.6), text='Zurück', on_click=backToMain, position=(-3, 2))
-Text(parent=buchstabenMenu, text='Wort: ', color=color.black, scale=(15, 15), position=(-2, 1))
-Text(parent=buchstabenMenu, text='Erkannt: ', color=color.black, scale=(15, 15), position=(-2, 0))
+buchstabenMenu.position = (0, 0)
+Button(parent=buchstabenMenu, color=color.gray, scale=(3, 1), text='Zurück', on_click=backToMain, position=(-5, -3), radius=.2)
+pictogramB = Entity(model='quad', scale=(2, 2, 2), position=(-1, 2), parent=buchstabenMenu)
+liveExtractedB = Entity(model='quad', scale=(2, 2, 2), position=(-1, -1), parent=buchstabenMenu)
+pictLetterBaseB = Entity(model='quad', scale=(2, 2, 2), position=(4, 2), parent=buchstabenMenu, color=color.white)
+pictLetterB = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=pictLetterBaseB,  text="", color=color.black)
+liveLetterBaseB = Entity(model='quad', scale=(2, 2, 2), position=(4, -1), parent=buchstabenMenu, color=color.white)
+liveLetterB = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=liveLetterBaseB,  text="", color=color.black)
+arrowB = Entity(model='quad', scale=(3.74/2, 1.04/2), position=(1.5, -1.25), parent=buchstabenMenu, texture=load_texture("archive/images/pfeil.png"))
+evalTextB = Text(scale=(20, 20), origin=(0, 0), position=(1.5, -0.75, -1e-3), parent=buchstabenMenu,  text="", color=color.white)
+holdTextB = Text(scale=(15, 15), origin=(0, 0), position=(-5.05, -1), parent=buchstabenMenu, text="Haltezeit in sek.", color=color.white)
+holdDurationB = Slider(parent=buchstabenMenu, position=(-6.3, -1.5), min=0, max=3, default=1, scale=(5, 5), on_value_changed=sliderChange)
+holdBarB = Entity(model='quad', scale=(1, 0.1), color=color.red, position=(0, 0), parent=buchstabenMenu)
 buchstabenMenu.disable()
-
-"""
-livePreview = Entity()
-livePreview.position = (-1, 2)
-image_texture = load_texture(r'archive\alphabet_pictogram\A.jpg')
-Text(parent=livePreview, text='Live Preview:', color=color.black, scale=(15, 15), position=(-2, -2))
-"""
 
 
 with VmbSystem.get_instance() as vmb:
-    timeStart = time.time()
     tempList = []
     it = 0
     write = False
@@ -180,7 +178,7 @@ with VmbSystem.get_instance() as vmb:
                             correctsInARow += 1
                         else:
                             correctsInARow = 0
-                        update_health_bar(correctsInARow / holdingFrames)
+                        updateHoldBar(holdBar, correctsInARow / holdingFrames)
                         if correctsInARow == holdingFrames:
                             t2.text += bestLetter
                             letterIdx += 1
@@ -190,6 +188,24 @@ with VmbSystem.get_instance() as vmb:
                         liveLetter.text = bestLetter
                         pictLetter.text = Util.shortLetter(currentLetter)
                         evalText.text = f"{bestEval:.03}"
+
+                    elif buchstabenMenu.enabled:
+                        if currentLetter is None:
+                            currentLetter = Util.generateLetter()
+                        if bestLetter == currentLetter:
+                            correctsInARow += 1
+                        else:
+                            correctsInARow = 0
+                        updateHoldBar(holdBarB, correctsInARow / holdingFrames)
+                        if correctsInARow == holdingFrames:
+                            correctsInARow = 0
+                            currentLetter = Util.generateLetter()
+                        liveExtractedB.texture = Texture(
+                            Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                        pictogramB.texture = load_texture(r"archive\alphabet_pictogram\%s.jpg" % currentLetter)
+                        liveLetterB.text = bestLetter
+                        pictLetterB.text = Util.shortLetter(currentLetter)
+                        evalTextB.text = f"{bestEval:.03}"
             it += 1
 
         app.run()
