@@ -7,10 +7,16 @@ from vmbpy import *
 import cv2
 import skimage
 from skimage.transform import resize
+from line_profiler_pycharm import profile
+import time
 
 #%% import model
 
 model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
+
+modelC1 = keras.models.Model(inputs=model.input, outputs=model.layers[1].output)
+modelC2 = keras.models.Model(inputs=model.input, outputs=model.layers[3].output)
+modelC3 = keras.models.Model(inputs=model.input, outputs=model.layers[5].output)
 #%% define constants
 
 Text.default_font = 'fonts/Ubuntu-Regular.ttf'
@@ -103,9 +109,9 @@ Button(parent=freeMenu, color=color.gray, scale=(3, 1), text='Zurück', on_click
 liveExtractedF = Entity(model='quad', scale=(2, 2, 2), position=(-3, 1), parent=freeMenu)
 liveF = Entity(model='quad', scale=(2, 2, 2), position=(-6, 2.5), parent=freeMenu)
 bgF = Entity(model='quad', scale=(2, 2, 2), position=(-6, -0.5), parent=freeMenu)
-nnBorder = Entity(model='quad', color=color.white, scale=(5, 5), position=(1.5, 1), collider='box', parent=freeMenu)
+nnBorder = Entity(model='quad', color=color.white, scale=(5.1, 5.1), position=(1.5, 1), collider='box', parent=freeMenu)
 nnBorder.roundness = 0.1
-nnBackground = Entity(model='quad', color=color.rgb(55, 55, 55), scale=(4.9, 4.9), position=(1.5, 1, -1e-3), collider='box', parent=freeMenu)
+nnBackground = Entity(model='quad', color=color.rgb(55, 55, 55), scale=(5, 5), position=(1.5, 1, -1e-3), collider='box', parent=freeMenu)
 liveLetterBaseF = Entity(model='quad', scale=(2, 2, 2), position=(6, 1), parent=freeMenu, color=color.white)
 liveLetterF = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=liveLetterBaseF,  text="", color=color.black)
 freeMenu.disable()
@@ -145,16 +151,19 @@ with VmbSystem.get_instance() as vmb:
 
         it, letterIdx, frameBG = 0, 0, None
         currentWord, currentLetter = None, None
+        c1 = None
         sliderChange()
-
+        @profile
         def update():
-            global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow
+            global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow, c1
             frame = handler.get_image()
             # reference background
             if it < 24:
                 bglist.append(frame)
             elif it == 24:
                 frameBG = np.mean(bglist, axis=0)
+                bgF.texture = Texture(
+                    Image.fromarray(cv2.cvtColor(frameBG.astype('uint8'), cv2.COLOR_BGR2RGBA), mode="RGBA"))
             else:
                 # extraction, resizing, evaluation, best match
                 extracted = Util.extractBG(frame, frameBG, kernelSmall, kernelBig)
@@ -163,7 +172,6 @@ with VmbSystem.get_instance() as vmb:
                 img = np.asarray(imgResized).reshape((-1, imageSize, imageSize, 3))
                 evaluation = model(img)
                 argmax = np.argmax(evaluation)
-
                 bestLetter = Util.shortLetter(Util.inverse(argmax))
                 bestEval = evaluation[0, argmax].numpy()
 
@@ -219,10 +227,19 @@ with VmbSystem.get_instance() as vmb:
                     liveExtractedF.texture = Texture(
                         Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
                     liveF.texture = Texture(
-                        Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA), mode="RGBA"))
-                    bgF.texture = Texture(
-                        Image.fromarray(cv2.cvtColor(frameBG.astype('uint8'), cv2.COLOR_BGR2RGBA), mode="RGBA"))
+                        Image.fromarray(cv2.cvtColor(cv2.resize(frame, (200, 200)), cv2.COLOR_BGR2RGBA), mode="RGBA"))
                     liveLetterF.text = bestLetter
+                    c1 = modelC1(img).numpy()
+                    c1Images = []
+                    for idx in range(9):
+                        layer1Output = (255 * c1[0, :, :, idx] / np.max(c1[0, :, :, :]))
+                        c1Images.append(cv2.resize(layer1Output, (75, 75), interpolation=cv2.INTER_NEAREST))
+                    bigImage = np.zeros((75*3, 75*3), dtype="uint8")
+                    for x in range(3):
+                        for y in range(3):
+                            bigImage[x * 75: (x + 1) * 75, y * 75: ((y + 1) * 75)] = c1Images[2 * x + y]
+                    nnBackground.texture = Texture(
+                        Image.fromarray(cv2.cvtColor(bigImage, cv2.COLOR_BGR2RGBA), mode="RGBA"))
             it += 1
 
         app.run()

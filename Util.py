@@ -1,3 +1,4 @@
+import copy
 from queue import Queue
 from vmbpy import *
 import numpy as np
@@ -10,21 +11,23 @@ fake = Faker('de_DE')
 class Handler:
 
     def __init__(self):
-        self.display_queue = Queue(10)
+        self.display_queue = Queue(1)
 
     def get_image(self):
         return self.display_queue.get(True)
 
     def __call__(self, cam: Camera, stream: Stream, frame: Frame):
         if frame.get_status() == FrameStatus.Complete:
-            # print('{} acquired {}'.format(cam, frame), flush=True)
-            self.display_queue.put(frame.as_opencv_image(), True)
+            if not self.display_queue.full():
+                self.display_queue.put(copy.deepcopy(frame.as_opencv_image()), False)
+            else:
+                print("Dropping frame!")
 
         cam.queue_frame(frame)
 
 
 def extractBG(frame, frameBG, kernelSmall, kernelBig):
-    mask = abs(0.1 * (frame - frameBG)).astype(np.uint8)
+    mask = abs(0.08 * (frame - frameBG)).astype(np.uint8)
     mask[mask >= 1] = 1
     mask[np.any(mask, axis=2)] = 1
     neighbor_count = cv2.filter2D(mask, cv2.CV_8U, kernelSmall)

@@ -4,8 +4,6 @@ Created on Wed Jan  3 15:05:40 2024
 
 @author: Linus
 """
-import copy
-import time
 from queue import Queue
 import BGExtractor
 from vmbpy import *
@@ -18,20 +16,22 @@ import matplotlib.pyplot as plt
 import cv2
 import skimage
 from skimage.transform import resize
-
+import time
 # import tensorflow and keras
 import tensorflow as tf
 from tensorflow import keras
 import os
 
 print("Packages imported...")
-#%%
+# %%
 # load trained model
 model = keras.models.load_model('asl_cnn.h5')
 batch_size = 64
 imageSize = 64
 target_dims = (imageSize, imageSize, 3)
-#%%
+
+
+# %%
 def at(x, index):
     return np.array([x[index], ])
 
@@ -53,10 +53,10 @@ def inverse(index):
 
 def allEvaluations(tensor):
     for index in range(26):
-        print("%s: %s" % (chr(ord("A") + index), tensor[0,index].numpy()))
-    print("del: %s" % (tensor[0,26].numpy()))
-    print("nothing: %s" % (tensor[0,27].numpy()))
-    print("space: %s" % (tensor[0,28].numpy()))
+        print("%s: %s" % (chr(ord("A") + index), tensor[0, index].numpy()))
+    print("del: %s" % (tensor[0, 26].numpy()))
+    print("nothing: %s" % (tensor[0, 27].numpy()))
+    print("space: %s" % (tensor[0, 28].numpy()))
     print("\nbest letter: %s" % inverse(np.argmax(tensor)))
     print("probability: %s" % (np.max(tensor)))
     return
@@ -68,7 +68,7 @@ def best(tensor):
     return
 
 
-#%% capture
+# %% capture
 """
 # define a video capture object
 vid = cv2.VideoCapture(0)
@@ -117,11 +117,13 @@ vid.release()
 # Destroy all the windows
 cv2.destroyAllWindows()
 """
-#%%
+
+
+# %%
 
 class Handler:
     def __init__(self):
-        self.display_queue = Queue(1)
+        self.display_queue = Queue(10)
 
     def get_image(self):
         return self.display_queue.get(True)
@@ -129,17 +131,13 @@ class Handler:
     def __call__(self, cam: Camera, stream: Stream, frame: Frame):
         if frame.get_status() == FrameStatus.Complete:
             print('{} acquired {}'.format(cam, frame), flush=True)
-            if not self.display_queue.full():
-                self.display_queue.put(copy.deepcopy(frame.as_opencv_image()), False)
-            else:
-                print("Dropping frame!")
+
+            self.display_queue.put(frame.as_opencv_image(), True)
 
         cam.queue_frame(frame)
 
 
 with VmbSystem.get_instance() as vmb:
-
-
     it = 0
     lastframes = []
     bglist = []
@@ -151,47 +149,16 @@ with VmbSystem.get_instance() as vmb:
         # Aquire single frame synchronously
         # setup general camera settings and the pixel format in which frames are recorded
         handler = Handler()
-        cam.start_streaming(handler=handler, buffer_count=10)
-        # Aquire 10 frames synchronously
+        cam.start_streaming(handler=handler, buffer_count=1)
         while True:
-            #cv2.imshow('frame', frame.as_opencv_image())
-            #cv2.waitKey(1)
 
-            # Capture the video frame
-            # by frame
             frame = handler.get_image()
-
-            if it < 24:
-                bglist.append(frame)
-            if it == 24:
-                frameBG = np.mean(bglist, axis=0) #.astype(np.uint8)
-          #  if len(lastframes) < 5:
-          #      lastframes.append(frame)
-          #  if len(lastframes) == 1 and it > 24:
-            if it > 24:
-                #lastframes.pop(0)
-                #lastframes.append(frame)
-                #avg = np.mean(lastframes, axis=0)
-
-                f = abs(0.08 * (frame - frameBG)).astype(np.uint8)
-                f[f >= 1] = 1
-                f[np.any(f, axis=2)] = 1
-                extracted = f * frame
-
-                # Display the resulting frame
-                frame = cv2.resize(frame, (200, 200))
-                cv2.imshow('frame', frame)
-                time.sleep(0.1)
-                frameResized = skimage.transform.resize(extracted, (64, 64, 3))
-                img = np.asarray(frameResized).reshape((-1, imageSize, imageSize, 3))
-                evaluation = model(img)
-                best(evaluation)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+            time.sleep(0.2)
+            cv2.imshow('frame', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
             it += 1
         cam.stop_streaming()
-    # After the loop release the cap object
-    #vid.release()
-    # Destroy all the windows
-    #cv2.destroyAllWindows()
+
+cv2.destroyAllWindows()
 
