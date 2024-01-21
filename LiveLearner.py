@@ -74,6 +74,11 @@ def updateHoldBar(bar, value):
     bar.x = -2 + value
     bar.color = lerp(color.red, color.green, value)
 
+def interpolation():
+    global interpBool
+    interpBool = not interpBool
+    interp.text = "Interpolation an" if interpBool else "Interpolation aus"
+
 
 mainMenu = Entity()
 mainMenu.position = (0, 0)
@@ -112,8 +117,23 @@ bgF = Entity(model='quad', scale=(2, 2, 2), position=(-6, -0.5), parent=freeMenu
 nnBorder = Entity(model='quad', color=color.white, scale=(5.1, 5.1), position=(1.5, 1), collider='box', parent=freeMenu)
 nnBorder.roundness = 0.1
 nnBackground = Entity(model='quad', color=color.rgb(55, 55, 55), scale=(5, 5), position=(1.5, 1, -1e-3), collider='box', parent=freeMenu)
+Text(scale=(8, 8), position=(1.2, -1.8, 0), parent=freeMenu, text="Layer 2", color=color.white)
+Text(scale=(8, 8), position=(1.2 - 5/3, -1.8, 0), parent=freeMenu, text="Layer 1", color=color.white)
+Text(scale=(8, 8), position=(1.2 + 5/3, -1.8, 0), parent=freeMenu, text="Layer 3", color=color.white)
 liveLetterBaseF = Entity(model='quad', scale=(2, 2, 2), position=(6, 1), parent=freeMenu, color=color.white)
 liveLetterF = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent=liveLetterBaseF,  text="", color=color.black)
+interp = Button(text="Interpolation aus", on_click=interpolation, position=(1.5, -3, 0), scale=(5, 1), parent=freeMenu, color=color.gray)
+Text(scale=(8, 8), position=(4.15, 1.35), parent=freeMenu, text="Output", color=color.white)
+Entity(model='quad', scale=(3.74/6, 1.04/6), position=(4.5, 1), parent=freeMenu, texture=load_texture("archive/images/pfeil.png"))
+Text(scale=(8, 8), position=(-1.75, 1.35), parent=freeMenu, text="Input", color=color.white)
+Entity(model='quad', scale=(3.74/6, 1.04/6), position=(-1.5, 1), parent=freeMenu, texture=load_texture("archive/images/pfeil.png"))
+Text(scale=(8, 8), position=(0.1, 3.9), parent=freeMenu, text="Convolutional Neural Network", color=color.white)
+Entity(model='quad', scale=(3.4/6, 3.4/6), position=(-4.5, 2), parent=freeMenu, texture=load_texture("archive/images/pfeil_45.png"))
+Entity(model='quad', scale=(3.4/6, 3.4/6), position=(-4.5, 0), parent=freeMenu, texture=load_texture("archive/images/pfeil45.png"))
+Text(scale=(8, 8), position=(-6.95, 0.8), parent=freeMenu, text="Referenzhintergrund", color=color.white)
+Text(scale=(8, 8), position=(-6.37, 3.8), parent=freeMenu, text="Livebild", color=color.white)
+Text(scale=(8, 8), position=(-3.79, 2.3), parent=freeMenu, text="isoliertes Livebild", color=color.white)
+Text(scale=(8, 8), position=(5.4, 2.3), parent=freeMenu, text="Klassifikation", color=color.white)
 freeMenu.disable()
 
 buchstabenMenu = Entity()
@@ -148,7 +168,7 @@ with VmbSystem.get_instance() as vmb:
     with cams[0] as cam:
         handler = Util.Handler()
         cam.start_streaming(handler=handler, buffer_count=10)
-
+        interpBool = False
         it, letterIdx, frameBG = 0, 0, None
         currentWord, currentLetter = None, None
         c1 = None
@@ -230,21 +250,26 @@ with VmbSystem.get_instance() as vmb:
                         Image.fromarray(cv2.cvtColor(cv2.resize(frame, (200, 200)), cv2.COLOR_BGR2RGBA), mode="RGBA"))
                     liveLetterF.text = bestLetter
 
+                    if interpBool:
+                        iMode = cv2.INTER_LINEAR
+                    else:
+                        iMode = cv2.INTER_NEAREST
+
                     cImages = []
                     c1 = modelC1(img).numpy()
                     for idx in range(12):
                         layer1Output = (255 * c1[0, :, :, idx] / np.max(c1[0, :, :, :]))
-                        cImages.append(cv2.resize(layer1Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+                        cImages.append(cv2.resize(layer1Output, (100, 100), interpolation=iMode))
 
                     c2 = modelC2(img).numpy()
                     for idx in range(12):
                         layer2Output = (255 * c2[0, :, :, idx] / np.max(c2[0, :, :, :]))
-                        cImages.append(cv2.resize(layer2Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+                        cImages.append(cv2.resize(layer2Output, (100, 100), interpolation=iMode))
 
                     c3 = modelC3(img).numpy()
                     for idx in range(12):
                         layer3Output = (255 * c3[0, :, :, idx] / np.max(c3[0, :, :, :]))
-                        cImages.append(cv2.resize(layer3Output, (100, 100), interpolation=cv2.INTER_NEAREST))
+                        cImages.append(cv2.resize(layer3Output, (100, 100), interpolation=iMode))
 
                     bigImage = np.zeros((600, 600), dtype="uint8")
                     for x in range(6):
