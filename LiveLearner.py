@@ -1,3 +1,8 @@
+"""
+Last Edit 21.01.2024
+@author: Linus Langenkamp
+"""
+
 from ursina import *
 import Util
 import numpy as np
@@ -7,13 +12,10 @@ from vmbpy import *
 import cv2
 import skimage
 from skimage.transform import resize
-from line_profiler_pycharm import profile
-import time
 
 #%% import model
 
 model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
-
 modelC1 = keras.models.Model(inputs=model.input, outputs=model.layers[2].output)
 modelC2 = keras.models.Model(inputs=model.input, outputs=model.layers[4].output)
 modelC3 = keras.models.Model(inputs=model.input, outputs=model.layers[6].output)
@@ -73,6 +75,7 @@ def updateHoldBar(bar, value):
     bar.scale_x = 2 * value
     bar.x = -2 + value
     bar.color = lerp(color.red, color.green, value)
+
 
 def interpolation():
     global interpBool
@@ -173,7 +176,7 @@ with VmbSystem.get_instance() as vmb:
         currentWord, currentLetter = None, None
         c1 = None
         sliderChange()
-        @profile
+
         def update():
             global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow, c1
             frame = handler.get_image()

@@ -1,3 +1,8 @@
+"""
+Last Edit 21.01.2024
+@author: Linus Langenkamp
+"""
+
 import copy
 from queue import Queue
 from vmbpy import *
