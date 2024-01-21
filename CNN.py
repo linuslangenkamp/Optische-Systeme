@@ -175,7 +175,7 @@ model.summary()
 #%%
 
 from tensorflow.keras.callbacks import EarlyStopping
-early_stop = EarlyStopping(monitor='val_loss',patience=2)
+early_stop = EarlyStopping(monitor='val_loss', patience=2, restore_best_weights=True)
 #%%
 
 model.compile(optimizer='adam',
@@ -202,11 +202,15 @@ print("The model metrics are")
 #%%
 
 metrics[['loss','val_loss']].plot()
+plt.savefig(r'archive\images\netStats\loss.svg', format='svg', dpi=300, bbox_inches='tight')
 plt.show()
 #%%
 
 metrics[['accuracy','val_accuracy']].plot()
+plt.yscale('log')
+plt.savefig(r'archive\images\netStats\accLog.svg', format='svg', dpi=300, bbox_inches='tight')
 plt.show()
+
 #%%
 
 model.evaluate(X_test,y_cat_test,verbose=0)
@@ -222,9 +226,11 @@ print(classification_report(y_test,predictions))
 #%%
 
 plt.figure(figsize=(12,12))
-sns.heatmap(confusion_matrix(y_test,predictions))
+sns.heatmap(confusion_matrix(y_test,predictions),cmap='Blues', annot=False, cbar=True, square=True, fmt='g', linewidths=.5, annot_kws={"size": 10})
+#plt.savefig(r'archive\images\netStats\confusionMatrixNumbers2.svg', format='svg', dpi=300, bbox_inches='tight')
 plt.show()
+
 #%%
 
-model.save('models\CNN_NoBG_ext_TO.h5')
+model.save('models\CNN_NoBG_ext_TO2.h5')
 print("Model saved successfully...")

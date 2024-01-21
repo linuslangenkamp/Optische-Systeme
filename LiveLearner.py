@@ -15,7 +15,7 @@ from skimage.transform import resize
 
 #%% import model
 
-model = keras.models.load_model('models\CNN_NoBG_ext_TO.h5')
+model = keras.models.load_model('models\CNN_NoBG_ext_TO2.h5')
 modelC1 = keras.models.Model(inputs=model.input, outputs=model.layers[2].output)
 modelC2 = keras.models.Model(inputs=model.input, outputs=model.layers[4].output)
 modelC3 = keras.models.Model(inputs=model.input, outputs=model.layers[6].output)
