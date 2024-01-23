@@ -201,9 +201,14 @@ metrics = pd.DataFrame(model.history.history)
 print("The model metrics are")
 #%%
 
-metrics[['loss','val_loss']].plot()
-plt.savefig(r'archive\images\netStats\loss.svg', format='svg', dpi=300, bbox_inches='tight')
+ax = metrics[['loss','val_loss']].plot(fontsize=14)
+plt.yscale('log')
+ax.set_xlabel('Epoch', fontsize=14)
+ax.set_ylabel('Loss', fontsize=14)
+plt.savefig(r'archive\images\netStats\lossLog.svg', format='svg', dpi=300, bbox_inches='tight')
 plt.show()
+
+
 #%%
 
 metrics[['accuracy','val_accuracy']].plot()
@@ -226,11 +231,11 @@ print(classification_report(y_test,predictions))
 #%%
 
 plt.figure(figsize=(12,12))
-sns.heatmap(confusion_matrix(y_test,predictions),cmap='Blues', annot=False, cbar=True, square=True, fmt='g', linewidths=.5, annot_kws={"size": 10})
-#plt.savefig(r'archive\images\netStats\confusionMatrixNumbers2.svg', format='svg', dpi=300, bbox_inches='tight')
+sns.heatmap(confusion_matrix(y_test,predictions),cmap='Blues', annot=True, cbar=True, square=True, fmt='g', linewidths=.5, annot_kws={"size": 10})
+plt.savefig(r'archive\images\netStats\confusionMatrixNumbers.svg', format='svg', dpi=300, bbox_inches='tight')
 plt.show()
 
 #%%
 
-model.save('models\CNN_NoBG_ext_TO2.h5')
+model.save('models\CNN_NoBG_ext_TO3.h5')
 print("Model saved successfully...")
