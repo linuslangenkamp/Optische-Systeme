@@ -70,6 +70,20 @@ def sliderChange():
     holdingFrames = max(1, int(holdDuration.value * 32))
 
 
+def sliderChangeB():
+    global correctsInARow, holdingFrames
+    correctsInARow = 0
+    holdingFrames = max(1, int(holdDurationB.value * 32))
+
+
+def sliderReset():
+    global correctsInARow, holdingFrames
+    correctsInARow = 0
+    holdDurationB.value = 1
+    holdDuration.value = 1
+    holdingFrames = 32
+
+
 def updateHoldBar(bar, value):
     value = clamp(value, 0, 1)
     bar.scale_x = 2 * value
@@ -151,7 +165,7 @@ liveLetterB = Text(scale=(20, 20), origin=(0, 0), position=(0, 0, -1e-3), parent
 arrowB = Entity(model='quad', scale=(3.74/2, 1.04/2), position=(1.5, -1.25), parent=buchstabenMenu, texture=load_texture("archive/images/pfeil.png"))
 evalTextB = Text(scale=(20, 20), origin=(0, 0), position=(1.5, -0.75, -1e-3), parent=buchstabenMenu,  text="", color=color.white)
 holdTextB = Text(scale=(15, 15), origin=(0, 0), position=(-5.05, -1), parent=buchstabenMenu, text="Haltezeit in sek.", color=color.white)
-holdDurationB = Slider(parent=buchstabenMenu, position=(-6.3, -1.5), min=0, max=3, default=1, scale=(5, 5), on_value_changed=sliderChange)
+holdDurationB = Slider(parent=buchstabenMenu, position=(-6.3, -1.5), min=0, max=3, default=1, scale=(5, 5), on_value_changed=sliderChangeB)
 holdBarB = Entity(model='quad', scale=(1, 0.1), color=color.red, position=(0, 0), parent=buchstabenMenu)
 buchstabenMenu.disable()
 
@@ -178,7 +192,7 @@ with VmbSystem.get_instance() as vmb:
         sliderChange()
 
         def update():
-            global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow, c1
+            global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow, c1, holdingFrames
             frame = handler.get_image()
             # reference background
             if it < 24:
@@ -203,6 +217,9 @@ with VmbSystem.get_instance() as vmb:
                     bestLetter = "?"
                 elif bestEval < 0.99:
                     bestLetter += "?"
+
+                if not (woerterMenu.enabled or buchstabenMenu.enabled):
+                    sliderReset()
 
                 # ui cases
                 if woerterMenu.enabled:
@@ -245,7 +262,6 @@ with VmbSystem.get_instance() as vmb:
                     liveLetterB.text = bestLetter
                     pictLetterB.text = Util.shortLetter(currentLetter)
                     evalTextB.text = f"{bestEval:.03}"
-
                 elif freeMenu.enabled:
                     liveExtractedF.texture = Texture(
                         Image.fromarray(cv2.cvtColor(extracted, cv2.COLOR_BGR2RGBA), mode="RGBA"))
