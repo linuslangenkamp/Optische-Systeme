@@ -97,6 +97,7 @@ def interpolation():
     interp.text = "Interpolation an" if interpBool else "Interpolation aus"
 
 
+# Entities in LiveLearner
 mainMenu = Entity()
 mainMenu.position = (0, 0)
 headline = Text(parent=mainMenu, scale=(25, 25), position=(0, 2), text="Deutsches Fingeralphabet - LiveLearner")
@@ -191,6 +192,7 @@ with VmbSystem.get_instance() as vmb:
         c1 = None
         sliderChange()
 
+        # ursina event loop
         def update():
             global it, frameBG, currentWord, currentLetter, letterIdx, correctsInARow, c1, holdingFrames
             frame = handler.get_image()

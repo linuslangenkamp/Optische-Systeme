@@ -40,7 +40,7 @@ with VmbSystem.get_instance() as vmb:
                 print(it)
                 extracted = Util.extractBG(frame, frameBG, kernelSmall, kernelBig)
                 extracted = cv2.resize(extracted, (200, 200))
-                if 1201 > it > 200:
+                if 1101 > it > 200:
                     tempList.append(extracted)
                 if it > 1100:
                     break

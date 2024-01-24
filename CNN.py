@@ -13,7 +13,7 @@ import skimage
 from skimage.transform import resize
 
 print("Packages imported...")
-#%%
+#%% get training data
 batch_size = 64
 imageSize = 64
 target_dims = (imageSize, imageSize, 3)
@@ -183,10 +183,10 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 #%%
 # turn off warning in case you use cpu
+
 import logging, os
 logging.disable(logging.WARNING)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 #%%
 
 model.fit(X_train, y_cat_train,
@@ -237,5 +237,5 @@ plt.show()
 
 #%%
 
-model.save('models\CNN_NoBG_ext_TO3.h5')
+model.save('models\CNN_NoBG_ext_TO4.h5')
 print("Model saved successfully...")
